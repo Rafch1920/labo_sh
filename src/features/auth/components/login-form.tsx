@@ -50,15 +50,14 @@ export function LoginForm() {
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-5">
-      {/* Error */}
+
       {error && (
-        <div className="flex items-start gap-2.5 p-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700 animate-fade-in-up">
+        <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700 animate-fade-in-up">
           <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-red-500" />
           <span>{error}</span>
         </div>
       )}
 
-      {/* Email */}
       <div className="space-y-1.5">
         <Label htmlFor="email" className="text-stone-500 text-xs font-medium uppercase tracking-wider">
           Adresse email
@@ -70,11 +69,10 @@ export function LoginForm() {
           autoComplete="email"
           required
           placeholder="vous@exemple.fr"
-          className="h-10 bg-white/80 border-stone-200 text-stone-800 placeholder:text-stone-300 focus:border-amber-400 focus:ring-amber-400/20 rounded-xl px-3"
+          className="h-10 bg-white border-stone-200 text-stone-800 placeholder:text-stone-300 focus:border-teal-400 focus:ring-teal-400/20 rounded-xl px-3 transition-shadow duration-200"
         />
       </div>
 
-      {/* Password */}
       <div className="space-y-1.5">
         <Label htmlFor="password" className="text-stone-500 text-xs font-medium uppercase tracking-wider">
           Mot de passe
@@ -87,7 +85,7 @@ export function LoginForm() {
             autoComplete="current-password"
             required
             placeholder="••••••••"
-            className="h-10 bg-white/80 border-stone-200 text-stone-800 placeholder:text-stone-300 focus:border-amber-400 focus:ring-amber-400/20 rounded-xl px-3 pr-10"
+            className="h-10 bg-white border-stone-200 text-stone-800 placeholder:text-stone-300 focus:border-teal-400 focus:ring-teal-400/20 rounded-xl px-3 pr-10 transition-shadow duration-200"
           />
           <button
             type="button"
@@ -95,20 +93,15 @@ export function LoginForm() {
             className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 transition-colors"
             tabIndex={-1}
           >
-            {showPassword ? (
-              <EyeOff className="w-4 h-4" />
-            ) : (
-              <Eye className="w-4 h-4" />
-            )}
+            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>
         </div>
       </div>
 
-      {/* Submit */}
       <Button
         type="submit"
         disabled={pending}
-        className="w-full h-10 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-400 hover:to-rose-400 text-white font-medium shadow-lg shadow-amber-200/40 border-0 transition-all duration-300"
+        className="w-full h-10 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-white font-medium shadow-lg shadow-teal-200/40 border-0 transition-all duration-300"
       >
         {pending ? (
           <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Connexion en cours...</>
@@ -117,19 +110,18 @@ export function LoginForm() {
         )}
       </Button>
 
-      {/* Links */}
       <div className="flex items-center justify-between pt-1">
         <a
           href="/register"
-          className="text-xs text-stone-400 hover:text-amber-600 transition-colors"
+          className="text-sm text-stone-400 hover:text-teal-600 transition-colors"
         >
           Créer un compte
         </a>
         <a
           href="/reset-password"
-          className="text-xs text-stone-400 hover:text-amber-600 transition-colors"
+          className="text-sm text-stone-400 hover:text-teal-600 transition-colors"
         >
-          Mot de passe oublié ?
+          Mot de passe oublié&nbsp;?
         </a>
       </div>
     </form>

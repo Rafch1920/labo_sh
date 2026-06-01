@@ -164,6 +164,19 @@
   80% { transform: translate(-15px, -10px) rotate(-5deg); }
 }
 
+@keyframes blob {
+  0%, 100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; transform: scale(1) translate(0, 0); }
+  25% { border-radius: 40% 60% 70% 30% / 40% 60% 30% 70%; transform: scale(1.05) translate(20px, -15px); }
+  50% { border-radius: 30% 70% 50% 50% / 60% 40% 60% 40%; transform: scale(0.95) translate(-10px, 10px); }
+  75% { border-radius: 70% 30% 40% 60% / 30% 70% 40% 60%; transform: scale(1.02) translate(15px, -5px); }
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 /* Shared animations */
 
 @keyframes float {
