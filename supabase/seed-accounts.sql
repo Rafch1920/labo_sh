@@ -1,6 +1,7 @@
 -- ============================================================
 -- Seed: Reset & Create test accounts
 -- Exécuter dans Supabase Dashboard > SQL Editor
+-- Utilise la fonction auth.admin_create_user() officielle
 -- ============================================================
 
 -- 1. Supprimer toutes les données existantes (ordre FK)
@@ -16,63 +17,56 @@ DELETE FROM public.profiles;
 DELETE FROM auth.identities;
 DELETE FROM auth.users;
 
--- 2. Créer les comptes
--- La fonction crypt() nécessite l'extension pgcrypto (activée par défaut sur Supabase)
-DO $$
-DECLARE
-  v_id UUID;
-BEGIN
-  -- ============================
-  -- Médecin
-  -- ============================
-  v_id := gen_random_uuid();
-  INSERT INTO auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, confirmation_sent_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
-  VALUES ('00000000-0000-0000-0000-000000000000', v_id, 'authenticated', 'authenticated', 'dr.marrakchi@labo.tn', crypt('123456789', gen_salt('bf')), now(), now(), '{"provider":"email","providers":["email"],"role":"doctor"}'::jsonb, '{}'::jsonb, now(), now());
-  INSERT INTO auth.identities (id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at)
-  VALUES (gen_random_uuid(), v_id, jsonb_build_object('sub', v_id, 'email', 'dr.marrakchi@labo.tn'), 'email', 'dr.marrakchi@labo.tn', now(), now(), now());
-  INSERT INTO public.profiles (id, email, role, full_name)
-  VALUES (v_id, 'dr.marrakchi@labo.tn', 'doctor', 'Dr. Marrakchi');
+-- 2. Créer les comptes via la fonction auth.admin_create_user()
+-- (gère correctement le hash du mot de passe et toutes les colonnes internes)
+SELECT auth.admin_create_user(
+  'dr.marrakchi@labo.tn',
+  '123456789',
+  jsonb_build_object('role', 'doctor'),
+  true
+);
 
-  -- ============================
-  -- Admin laboratoire
-  -- ============================
-  v_id := gen_random_uuid();
-  INSERT INTO auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, confirmation_sent_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
-  VALUES ('00000000-0000-0000-0000-000000000000', v_id, 'authenticated', 'authenticated', 'shayma@labo.tn', crypt('123456789', gen_salt('bf')), now(), now(), '{"provider":"email","providers":["email"],"role":"lab_admin"}'::jsonb, '{}'::jsonb, now(), now());
-  INSERT INTO auth.identities (id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at)
-  VALUES (gen_random_uuid(), v_id, jsonb_build_object('sub', v_id, 'email', 'shayma@labo.tn'), 'email', 'shayma@labo.tn', now(), now(), now());
-  INSERT INTO public.profiles (id, email, role, full_name)
-  VALUES (v_id, 'shayma@labo.tn', 'lab_admin', 'Shayma');
+INSERT INTO public.profiles (id, email, role, full_name)
+SELECT id, 'dr.marrakchi@labo.tn', 'doctor', 'Dr. Marrakchi'
+FROM auth.users WHERE email = 'dr.marrakchi@labo.tn';
 
-  -- ============================
-  -- Patient
-  -- ============================
-  v_id := gen_random_uuid();
-  INSERT INTO auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, confirmation_sent_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
-  VALUES ('00000000-0000-0000-0000-000000000000', v_id, 'authenticated', 'authenticated', 'patient@labo.tn', crypt('123456789', gen_salt('bf')), now(), now(), '{"provider":"email","providers":["email"],"role":"patient"}'::jsonb, '{}'::jsonb, now(), now());
-  INSERT INTO auth.identities (id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at)
-  VALUES (gen_random_uuid(), v_id, jsonb_build_object('sub', v_id, 'email', 'patient@labo.tn'), 'email', 'patient@labo.tn', now(), now(), now());
-  INSERT INTO public.profiles (id, email, role, full_name)
-  VALUES (v_id, 'patient@labo.tn', 'patient', 'Patient Test');
+SELECT auth.admin_create_user(
+  'shayma@labo.tn',
+  '123456789',
+  jsonb_build_object('role', 'lab_admin'),
+  true
+);
 
-  -- ============================
-  -- Super Admin
-  -- ============================
-  v_id := gen_random_uuid();
-  INSERT INTO auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, confirmation_sent_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
-  VALUES ('00000000-0000-0000-0000-000000000000', v_id, 'authenticated', 'authenticated', 'admin@labo.tn', crypt('123456789', gen_salt('bf')), now(), now(), '{"provider":"email","providers":["email"],"role":"super_admin"}'::jsonb, '{}'::jsonb, now(), now());
-  INSERT INTO auth.identities (id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at)
-  VALUES (gen_random_uuid(), v_id, jsonb_build_object('sub', v_id, 'email', 'admin@labo.tn'), 'email', 'admin@labo.tn', now(), now(), now());
-  INSERT INTO public.profiles (id, email, role, full_name)
-  VALUES (v_id, 'admin@labo.tn', 'super_admin', 'Super Admin');
+INSERT INTO public.profiles (id, email, role, full_name)
+SELECT id, 'shayma@labo.tn', 'lab_admin', 'Shayma'
+FROM auth.users WHERE email = 'shayma@labo.tn';
 
-END;
-$$;
+SELECT auth.admin_create_user(
+  'patient@labo.tn',
+  '123456789',
+  jsonb_build_object('role', 'patient'),
+  true
+);
+
+INSERT INTO public.profiles (id, email, role, full_name)
+SELECT id, 'patient@labo.tn', 'patient', 'Patient Test'
+FROM auth.users WHERE email = 'patient@labo.tn';
+
+SELECT auth.admin_create_user(
+  'admin@labo.tn',
+  '123456789',
+  jsonb_build_object('role', 'super_admin'),
+  true
+);
+
+INSERT INTO public.profiles (id, email, role, full_name)
+SELECT id, 'admin@labo.tn', 'super_admin', 'Super Admin'
+FROM auth.users WHERE email = 'admin@labo.tn';
 
 -- 3. Vérification
 SELECT
   u.email,
-  u.confirmed_at IS NOT NULL AS email_confirmed,
+  u.email_confirmed_at IS NOT NULL AS email_confirmed,
   u.raw_app_meta_data->>'role' AS app_role,
   p.role AS profile_role,
   p.full_name
