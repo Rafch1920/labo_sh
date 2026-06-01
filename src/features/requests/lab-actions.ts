@@ -152,8 +152,11 @@ export async function sendReportToPatient(
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) return { error: "Non authentifié" };
 
-  const file = formData.get("file") as File;
-  if (!file || file.size === 0) return { error: "Aucun fichier" };
+  const filePath = formData.get("file_path") as string;
+  const fileName = formData.get("file_name") as string;
+  const fileSize = parseInt(formData.get("file_size") as string || "0");
+
+  if (!filePath) return { error: "Aucun fichier" };
 
   const admin = createAdminClient();
 
@@ -168,23 +171,12 @@ export async function sendReportToPatient(
     return { error: "Le rapport doit d'abord être validé par le médecin" };
   }
 
-  // Upload file to storage
-  const storagePath = `${requestId}/report-final-${Date.now()}.pdf`;
-  const { error: uploadError } = await admin.storage
-    .from("request-documents")
-    .upload(storagePath, file, {
-      contentType: "application/pdf",
-      upsert: true,
-    });
-
-  if (uploadError) return { error: `Erreur upload: ${uploadError.message}` };
-
   const { error: docError } = await admin.from("request_documents").insert({
     request_id: requestId,
     file_category: "medical_report",
-    file_name: file.name || "bilan.pdf",
-    file_path: storagePath,
-    file_size_bytes: file.size,
+    file_name: fileName || "bilan.pdf",
+    file_path: filePath,
+    file_size_bytes: fileSize,
     mime_type: "application/pdf",
     uploaded_by: user.id,
     is_verified: true,
