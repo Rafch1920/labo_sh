@@ -8,8 +8,6 @@ services:
     startCommand: npx next start -p $PORT
     healthCheckPath: /api/auth/debug
     envVars:
-      - key: NODE_ENV
-        value: production
       - key: NEXT_PUBLIC_SITE_URL
         fromService:
           type: web
