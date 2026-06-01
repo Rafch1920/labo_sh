@@ -46,19 +46,25 @@ async function deleteExistingAuthUsers() {
 
 async function createAccount(acct) {
   console.log(`Création: ${acct.email} (${acct.role})...`);
-  const { data, error } = await admin.auth.admin.createUser({
-    email: acct.email,
-    password: acct.password,
-    email_confirm: true,
-    app_metadata: { role: acct.role },
-    user_metadata: { full_name: acct.full_name },
-  });
-  if (error) { console.error(`  ERREUR: ${error.message}`); return; }
-
-  const { error: pe } = await admin.from("profiles").insert({
-    id: data.user.id, email: acct.email, role: acct.role, full_name: acct.full_name,
-  });
-  console.error(pe ? `  ERREUR profile: ${pe.message}` : `  OK`);
+  try {
+    const { data, error } = await admin.auth.admin.createUser({
+      email: acct.email,
+      password: acct.password,
+      email_confirm: true,
+      app_metadata: { role: acct.role },
+      user_metadata: { full_name: acct.full_name },
+    });
+    if (error) {
+      console.error(`  ERREUR:`, JSON.stringify(error, null, 2));
+      return;
+    }
+    const { error: pe } = await admin.from("profiles").insert({
+      id: data.user.id, email: acct.email, role: acct.role, full_name: acct.full_name,
+    });
+    console.error(pe ? `  ERREUR profile: ${JSON.stringify(pe.message)}` : `  OK`);
+  } catch (e) {
+    console.error(`  EXCEPTION:`, e instanceof Error ? e.message : JSON.stringify(e));
+  }
 }
 
 async function verify() {
