@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { useActionState } from "react";
-import { Upload, X, AlertTriangle } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { Upload, X, AlertTriangle, Check } from "lucide-react";
 import { replaceDocuments } from "@/features/requests/document-actions";
-import { docLabel, resolveFileCategory } from "@/lib/doc-labels";
+import { docLabel } from "@/lib/doc-labels";
 
 type DocFile = {
   id: string;
@@ -15,15 +14,6 @@ type DocFile = {
   rejection_reason: string | null;
 };
 
-type NewFile = {
-  id: string;
-  file: File;
-  category: string;
-  path: string;
-  url: string;
-  oldDocId: string;
-};
-
 export function DocumentCorrectionPanel({
   requestId,
   rejectedDocs,
@@ -31,75 +21,27 @@ export function DocumentCorrectionPanel({
   requestId: string;
   rejectedDocs: DocFile[];
 }) {
-  const [newFiles, setNewFiles] = useState<NewFile[]>([]);
-  const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [selectedDoc, setSelectedDoc] = useState<DocFile | null>(null);
-  const supabase = createClient();
+  const [selectedFiles, setSelectedFiles] = useState<Record<string, File>>({});
 
   const [state, action, pending] = useActionState(
     replaceDocuments.bind(null, requestId),
     { error: null }
   );
 
-  useEffect(() => {
-    return () => {
-      for (const f of newFiles) URL.revokeObjectURL(f.url);
-    };
-  }, [newFiles]);
-
-  async function handleFilePick(doc: DocFile, files: FileList | null) {
-    if (!files?.length) return;
-    setUploadError(null);
-    setUploading(true);
-
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      setUploadError("Vous devez être connecté pour uploader un fichier.");
-      setUploading(false);
-      return;
-    }
-
-    const resolvedCategory = resolveFileCategory(doc.file_category, doc.file_path);
-    const file = files[0];
-    const fileId = crypto.randomUUID();
-    const filePath = `${user.id}/${resolvedCategory}/${fileId}-${file.name}`;
-
-    const { error } = await supabase.storage
-      .from("request-documents")
-      .upload(filePath, file);
-
-    if (error) {
-      setUploadError(`Échec de l'upload : ${error.message}`);
-      setUploading(false);
-      return;
-    }
-
-    const previewUrl = URL.createObjectURL(file);
-
-    setNewFiles((prev) => {
-      const existing = prev.find((f) => f.oldDocId === doc.id);
-      if (existing) URL.revokeObjectURL(existing.url);
-      return [
-        ...prev.filter((f) => f.oldDocId !== doc.id),
-        { id: fileId, file, category: resolvedCategory, path: filePath, url: previewUrl, oldDocId: doc.id },
-      ];
-    });
-
-    setUploading(false);
-    setSelectedDoc(null);
+  function handleFileSelect(docId: string, file: File | null) {
+    if (!file) return;
+    setSelectedFiles((prev) => ({ ...prev, [docId]: file }));
   }
 
-  function removeFile(oldDocId: string) {
-    setNewFiles((prev) => {
-      const removed = prev.find((f) => f.oldDocId === oldDocId);
-      if (removed) URL.revokeObjectURL(removed.url);
-      return prev.filter((f) => f.oldDocId !== oldDocId);
+  function removeFile(docId: string) {
+    setSelectedFiles((prev) => {
+      const next = { ...prev };
+      delete next[docId];
+      return next;
     });
   }
 
-  const replacedCount = newFiles.length;
+  const replacedCount = Object.keys(selectedFiles).length;
 
   return (
     <div className="rounded-2xl border border-amber-200/70 bg-amber-50 p-6">
@@ -115,14 +57,14 @@ export function DocumentCorrectionPanel({
         </div>
       </div>
 
-      <div className="space-y-3 mb-5">
+      <form action={action} className="space-y-3 mb-4">
         {rejectedDocs.map((doc) => {
-          const replacement = newFiles.find((f) => f.oldDocId === doc.id);
+          const file = selectedFiles[doc.id];
           return (
             <div
               key={doc.id}
               className={`rounded-xl border p-4 transition-colors ${
-                replacement
+                file
                   ? "border-emerald-200 bg-emerald-50/50"
                   : "border-red-200 bg-white"
               }`}
@@ -138,14 +80,15 @@ export function DocumentCorrectionPanel({
                   <p className="text-xs text-red-500 mt-1">
                     Motif : {doc.rejection_reason ?? "Document non valide"}
                   </p>
-                  {replacement && (
-                    <p className="text-xs text-emerald-600 mt-1">
-                      ✓ Nouveau fichier : {replacement.file.name}
+                  {file && (
+                    <p className="text-xs text-emerald-600 mt-1 flex items-center gap-1">
+                      <Check className="w-3 h-3" />
+                      {file.name}
                     </p>
                   )}
                 </div>
-                <div className="shrink-0 flex items-center gap-2">
-                  {replacement ? (
+                <div className="shrink-0">
+                  {file ? (
                     <button
                       type="button"
                       onClick={() => removeFile(doc.id)}
@@ -154,57 +97,34 @@ export function DocumentCorrectionPanel({
                       <X className="w-3.5 h-3.5" />
                     </button>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedDoc(doc);
-                        fileInputRef.current?.click();
-                      }}
-                      disabled={uploading}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 text-white text-xs font-medium hover:bg-amber-700 transition-all disabled:opacity-50"
-                    >
+                    <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 text-white text-xs font-medium hover:bg-amber-700 transition-all cursor-pointer">
                       <Upload className="w-3 h-3" />
                       Remplacer
-                    </button>
+                      <input
+                        type="file"
+                        name={`file_${doc.id}`}
+                        accept="image/*,.pdf,.doc,.docx"
+                        className="hidden"
+                        onChange={(e) => {
+                          handleFileSelect(doc.id, e.target.files?.[0] ?? null);
+                        }}
+                      />
+                    </label>
                   )}
                 </div>
               </div>
+
+              <input type="hidden" name="old_doc_ids" value={doc.id} />
+              <input type="hidden" name={`cat_${doc.id}`} value={doc.file_category} />
             </div>
           );
         })}
-      </div>
-
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*,.pdf,.doc,.docx"
-        className="hidden"
-        onChange={(e) => {
-          if (selectedDoc) handleFilePick(selectedDoc, e.target.files);
-          e.target.value = "";
-        }}
-      />
-
-      {uploadError && (
-        <p className="text-sm text-red-600 mb-3">{uploadError}</p>
-      )}
-
-      <form action={action}>
-        {newFiles.map((f) => (
-          <div key={f.id}>
-            <input type="hidden" name="file_paths" value={f.path} />
-            <input type="hidden" name="file_names" value={f.file.name} />
-            <input type="hidden" name="file_sizes" value={String(f.file.size)} />
-            <input type="hidden" name="file_categories" value={f.category} />
-            <input type="hidden" name="old_doc_ids" value={f.oldDocId} />
-          </div>
-        ))}
 
         {state?.error && (
-          <p className="text-sm text-red-600 mb-3">{state.error}</p>
+          <p className="text-sm text-red-600">{state.error}</p>
         )}
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 pt-1">
           <button
             type="submit"
             disabled={replacedCount === 0 || pending}
@@ -214,8 +134,7 @@ export function DocumentCorrectionPanel({
           </button>
           {replacedCount > 0 && (
             <p className="text-xs text-amber-700/60">
-              {replacedCount} document{replacedCount > 1 ? "s" : ""} remplacé
-              {replacedCount > 1 ? "s" : ""}
+              {replacedCount} document{replacedCount > 1 ? "s" : ""} sélectionné{replacedCount > 1 ? "s" : ""}
             </p>
           )}
         </div>

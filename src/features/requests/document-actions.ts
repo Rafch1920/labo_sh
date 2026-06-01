@@ -3,7 +3,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
-import { categoryFromPath } from "@/lib/doc-labels";
 
 type ActionResult = { error: string | null };
 
@@ -53,7 +52,6 @@ export async function replaceDocuments(
     return { error: "Non authentifié" };
   }
 
-  // Verify ownership and INCOMPLETE_DOSSIER status
   const { data: request } = await supabase
     .from("analysis_requests")
     .select("status")
@@ -66,34 +64,12 @@ export async function replaceDocuments(
     return { error: "Cette demande n'est pas en attente de correction" };
   }
 
-  const filePaths = formData.getAll("file_paths") as string[];
-  const fileNames = formData.getAll("file_names") as string[];
-  const fileSizes = formData.getAll("file_sizes") as string[];
   const oldDocIds = formData.getAll("old_doc_ids") as string[];
-
-  if (filePaths.length === 0) {
+  if (oldDocIds.length === 0) {
     return { error: "Aucun fichier à remplacer" };
   }
 
   const admin = createAdminClient();
-
-  // Delete old rejected documents
-  if (oldDocIds.length > 0) {
-    const { data: oldDocs } = await admin
-      .from("request_documents")
-      .select("id, file_path")
-      .in("id", oldDocIds);
-
-    if (oldDocs && oldDocs.length > 0) {
-      const storagePaths = oldDocs.map((d) => d.file_path);
-      await supabase.storage.from("request-documents").remove(storagePaths);
-
-      const oldIds = oldDocs.map((d) => d.id);
-      await admin.from("request_documents").delete().in("id", oldIds);
-    }
-  }
-
-  // Insert new documents
   const mimeMap: Record<string, string> = {
     pdf: "application/pdf",
     png: "image/png",
@@ -104,21 +80,64 @@ export async function replaceDocuments(
     docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   };
 
-  const docs = filePaths.map((path, i) => {
-    const ext = path.split(".").pop()?.toLowerCase() ?? "";
-    return {
+  const newDocs: {
+    request_id: string;
+    file_category: string;
+    file_name: string;
+    file_path: string;
+    file_size_bytes: number;
+    mime_type: string;
+    uploaded_by: string;
+    is_verified: boolean;
+  }[] = [];
+
+  for (const oldDocId of oldDocIds) {
+    const file = formData.get(`file_${oldDocId}`) as File | null;
+    if (!file || file.size === 0) continue;
+
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+    const category = formData.get(`cat_${oldDocId}`) as string || "other";
+    const storagePath = `${user.id}/${category}/${crypto.randomUUID()}-${file.name}`;
+
+    const { error: uploadError } = await admin.storage
+      .from("request-documents")
+      .upload(storagePath, file, { contentType: file.type, upsert: false });
+
+    if (uploadError) {
+      return { error: `Erreur upload ${file.name} : ${uploadError.message}` };
+    }
+
+    newDocs.push({
       request_id: requestId,
-      file_category: categoryFromPath(path),
-      file_name: fileNames[i] ?? "document",
-      file_path: path,
-      file_size_bytes: parseInt(fileSizes[i] ?? "0"),
+      file_category: category,
+      file_name: file.name,
+      file_path: storagePath,
+      file_size_bytes: file.size,
       mime_type: mimeMap[ext] ?? "application/octet-stream",
       uploaded_by: user.id,
       is_verified: false,
-    };
-  });
+    });
+  }
 
-  const { error: docError } = await admin.from("request_documents").insert(docs);
+  if (newDocs.length === 0) {
+    return { error: "Aucun fichier valide n'a été fourni" };
+  }
+
+  // Delete old rejected documents from storage
+  const { data: oldDocs } = await admin
+    .from("request_documents")
+    .select("id, file_path")
+    .in("id", oldDocIds);
+
+  if (oldDocs && oldDocs.length > 0) {
+    const storagePaths = oldDocs.map((d) => d.file_path);
+    await admin.storage.from("request-documents").remove(storagePaths);
+    const ids = oldDocs.map((d) => d.id);
+    await admin.from("request_documents").delete().in("id", ids);
+  }
+
+  // Insert new documents
+  const { error: docError } = await admin.from("request_documents").insert(newDocs);
   if (docError) {
     return { error: `Erreur lors de l'enregistrement des documents: ${docError.message}` };
   }
