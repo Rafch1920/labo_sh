@@ -4,6 +4,12 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
 
+  experimental: {
+    serverActions: {
+      allowedOrigins: ["localhost:3000", "*.app.github.dev", "*.preview.app.github.dev"],
+    },
+  },
+
   headers: async () => [
     {
       source: "/(.*)",
