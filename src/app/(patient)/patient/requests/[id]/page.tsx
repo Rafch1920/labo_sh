@@ -62,10 +62,12 @@ export default async function RequestDetailPage(props: {
     (d) => d.rejection_reason != null && !d.is_verified
   );
 
+  const correctionDocs = (documents ?? []).filter((d) => !d.is_verified);
+
   const reportDoc = docsWithUrls.find((d) => d.file_category === "report");
   const reportUrl = reportDoc?.public_url ?? "";
 
-  const needsCorrection = request.status === "INCOMPLETE_DOSSIER" && rejectedDocs.length > 0;
+  const needsCorrection = request.status === "INCOMPLETE_DOSSIER" && correctionDocs.length > 0;
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -170,8 +172,8 @@ export default async function RequestDetailPage(props: {
       )}
 
       {/* Document correction panel */}
-      {request.status === "INCOMPLETE_DOSSIER" && rejectedDocs.length > 0 && (
-        <DocumentCorrectionPanel requestId={id} rejectedDocs={rejectedDocs} />
+      {request.status === "INCOMPLETE_DOSSIER" && (
+        <DocumentCorrectionPanel requestId={id} rejectedDocs={rejectedDocs.length > 0 ? rejectedDocs : correctionDocs} />
       )}
 
       {/* Request path */}
