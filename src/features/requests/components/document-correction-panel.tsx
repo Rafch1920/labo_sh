@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useActionState } from "react";
 import { Upload, X, AlertTriangle, Check } from "lucide-react";
 import { replaceDocuments } from "@/features/requests/document-actions";
@@ -22,15 +22,19 @@ export function DocumentCorrectionPanel({
   rejectedDocs: DocFile[];
 }) {
   const [selectedFiles, setSelectedFiles] = useState<Record<string, File>>({});
+  const fileInputs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const [state, action, pending] = useActionState(
     replaceDocuments.bind(null, requestId),
     { error: null }
   );
 
-  function handleFileSelect(docId: string, file: File | null) {
-    if (!file) return;
+  function handleFileSelect(docId: string) {
+    const input = fileInputs.current[docId];
+    if (!input || !input.files?.length) return;
+    const file = input.files[0];
     setSelectedFiles((prev) => ({ ...prev, [docId]: file }));
+    input.value = "";
   }
 
   function removeFile(docId: string) {
@@ -39,6 +43,8 @@ export function DocumentCorrectionPanel({
       delete next[docId];
       return next;
     });
+    const input = fileInputs.current[docId];
+    if (input) input.value = "";
   }
 
   const replacedCount = Object.keys(selectedFiles).length;
@@ -97,23 +103,26 @@ export function DocumentCorrectionPanel({
                       <X className="w-3.5 h-3.5" />
                     </button>
                   ) : (
-                    <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 text-white text-xs font-medium hover:bg-amber-700 transition-all cursor-pointer">
+                    <button
+                      type="button"
+                      onClick={() => fileInputs.current[doc.id]?.click()}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 text-white text-xs font-medium hover:bg-amber-700 transition-all cursor-pointer"
+                    >
                       <Upload className="w-3 h-3" />
                       Remplacer
-                      <input
-                        type="file"
-                        name={`file_${doc.id}`}
-                        accept="image/*,.pdf,.doc,.docx"
-                        className="hidden"
-                        onChange={(e) => {
-                          handleFileSelect(doc.id, e.target.files?.[0] ?? null);
-                        }}
-                      />
-                    </label>
+                    </button>
                   )}
                 </div>
               </div>
 
+              <input
+                ref={(el) => { fileInputs.current[doc.id] = el; }}
+                type="file"
+                name={`file_${doc.id}`}
+                accept="image/*,.pdf,.doc,.docx"
+                className="hidden"
+                onChange={() => handleFileSelect(doc.id)}
+              />
               <input type="hidden" name="old_doc_ids" value={doc.id} />
               <input type="hidden" name={`cat_${doc.id}`} value={doc.file_category} />
             </div>
