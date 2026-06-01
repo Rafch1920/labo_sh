@@ -29,6 +29,7 @@ export async function rejectDocument(requestId: string, docId: string, reason: s
   if (!user) return { error: "Non authentifié" };
 
   const admin = createAdminClient();
+
   const { error } = await admin
     .from("request_documents")
     .update({ is_verified: false, reviewed_by: user.id, reviewed_at: new Date().toISOString(), rejection_reason: reason })
@@ -36,7 +37,27 @@ export async function rejectDocument(requestId: string, docId: string, reason: s
 
   if (error) return { error: error.message };
 
+  // Auto-transition to INCOMPLETE_DOSSIER if docs are under review
+  const { data: req } = await admin
+    .from("analysis_requests")
+    .select("status")
+    .eq("id", requestId)
+    .single();
+
+  if (req && req.status === "DOCUMENTS_UNDER_REVIEW") {
+    const { error: statusError } = await client
+      .from("analysis_requests")
+      .update({ status: "INCOMPLETE_DOSSIER" })
+      .eq("id", requestId);
+
+    if (statusError) {
+      return { error: statusError.message };
+    }
+  }
+
   revalidatePath(`/lab/requests/${requestId}`);
+  revalidatePath("/patient/dashboard");
+  revalidatePath(`/patient/requests/${requestId}`);
   return { error: null };
 }
 
