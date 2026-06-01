@@ -73,7 +73,7 @@ $$;
 SELECT
   u.email,
   u.confirmed_at IS NOT NULL AS email_confirmed,
-  u.app_metadata->>'role' AS app_role,
+  u.raw_app_meta_data->>'role' AS app_role,
   p.role AS profile_role,
   p.full_name
 FROM auth.users u
