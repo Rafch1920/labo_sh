@@ -2,6 +2,7 @@ import Link from "next/link";
 import { LayoutDashboard, Calendar, LogOut, Activity, Microscope, FlaskConical, Droplets, HeartPulse, Gem } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { NotificationBell } from "@/features/notifications/components/notification-bell";
 
 export default async function PatientLayout({
   children,
@@ -176,6 +177,7 @@ export default async function PatientLayout({
               <span className="hidden sm:inline">Rendez-vous</span>
             </Link>
             <div className="w-px h-5 bg-stone-200 mx-2" />
+            <NotificationBell />
             <div className="flex items-center gap-2 pl-1">
               <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#1e3a5f] to-[#2a4a73] flex items-center justify-center text-[11px] font-semibold text-blue-200 shadow-sm">
                 {name.charAt(0).toUpperCase()}
