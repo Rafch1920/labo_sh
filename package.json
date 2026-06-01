@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed": "node scripts/seed-accounts.mjs"
+    "seed": "node --env-file .env.local scripts/seed-accounts.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
