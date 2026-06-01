@@ -283,36 +283,57 @@ export default async function PatientDashboardPage() {
             </div>
           ) : (
             <div className="divide-y divide-stone-100">
-              {requests.map((req) => (
-                <Link
-                  key={req.id}
-                  href={`/patient/requests/${req.id}`}
-                  className="flex items-center justify-between px-6 py-4 hover:bg-blue-50/30 transition-all group"
-                >
-                  <div className="flex items-center gap-4 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0 group-hover:bg-blue-100 transition-colors">
-                      <Activity className="w-4 h-4 text-blue-500" />
+              {requests.map((req) => {
+                const needsCorrection = req.status === "INCOMPLETE_DOSSIER";
+                return (
+                  <Link
+                    key={req.id}
+                    href={`/patient/requests/${req.id}`}
+                    className={`flex items-center justify-between px-6 py-4 transition-all group ${
+                      needsCorrection
+                        ? "bg-amber-50/80 hover:bg-amber-100/80 border-l-4 border-l-amber-500"
+                        : "hover:bg-blue-50/30"
+                    }`}
+                  >
+                    <div className="flex items-center gap-4 min-w-0">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                        needsCorrection
+                          ? "bg-amber-100 group-hover:bg-amber-200"
+                          : "bg-blue-50 group-hover:bg-blue-100"
+                      }`}>
+                        <Activity className={`w-4 h-4 ${
+                          needsCorrection ? "text-amber-600" : "text-blue-500"
+                        }`} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-medium text-stone-700 group-hover:text-[#1e3a5f] transition-colors truncate">
+                          {req.patient_first_name} {req.patient_last_name}
+                        </p>
+                        <p className="text-xs text-stone-400 mt-0.5">
+                          {new Date(req.created_at).toLocaleDateString("fr-FR", {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                          })}
+                        </p>
+                        {needsCorrection && (
+                          <p className="text-xs font-medium text-amber-700 mt-1 flex items-center gap-1">
+                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                            Action requise — cliquez pour corriger les documents
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="font-medium text-stone-700 group-hover:text-[#1e3a5f] transition-colors truncate">
-                        {req.patient_first_name} {req.patient_last_name}
-                      </p>
-                      <p className="text-xs text-stone-400 mt-0.5">
-                        {new Date(req.created_at).toLocaleDateString("fr-FR", {
-                          day: "numeric",
-                          month: "long",
-                          year: "numeric",
-                        })}
-                      </p>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <RequestPathMini status={req.status} />
+                      <StatusBadge status={req.status} />
+                      <ArrowRight className={`w-4 h-4 transition-colors ${
+                        needsCorrection ? "text-amber-400" : "text-stone-200 group-hover:text-stone-400"
+                      }`} />
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <RequestPathMini status={req.status} />
-                    <StatusBadge status={req.status} />
-                    <ArrowRight className="w-4 h-4 text-stone-200 group-hover:text-stone-400 transition-colors" />
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                );
+              })}
             </div>
           )}
         </div>

@@ -18,6 +18,7 @@ import {
   Calendar,
   Activity,
   Droplets,
+  AlertTriangle,
 } from "lucide-react";
 
 export default async function RequestDetailPage(props: {
@@ -64,8 +65,10 @@ export default async function RequestDetailPage(props: {
   const reportDoc = docsWithUrls.find((d) => d.file_category === "report");
   const reportUrl = reportDoc?.public_url ?? "";
 
+  const needsCorrection = request.status === "INCOMPLETE_DOSSIER" && rejectedDocs.length > 0;
+
   return (
-    <div className="max-w-3xl mx-auto space-y-8">
+    <div className="max-w-3xl mx-auto space-y-6">
       <Link
         href="/patient/dashboard"
         className="inline-flex items-center gap-1.5 text-sm text-stone-400 hover:text-[#1e3a5f] transition-colors"
@@ -73,6 +76,23 @@ export default async function RequestDetailPage(props: {
         <ChevronLeft className="w-4 h-4" />
         Retour au tableau de bord
       </Link>
+
+      {needsCorrection && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-amber-100 shrink-0">
+              <AlertTriangle className="w-5 h-5 text-amber-700" />
+            </div>
+            <div>
+              <p className="font-semibold text-amber-900">Documents à corriger</p>
+              <p className="text-sm text-amber-700/70 mt-0.5">
+                Certains documents de votre dossier ont été refusés par le laboratoire.
+                Remplacez-les ci-dessous pour que la vérification puisse continuer.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div className="relative overflow-hidden rounded-2xl bg-[#1e3a5f] p-8">
