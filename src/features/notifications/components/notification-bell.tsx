@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Bell } from "lucide-react";
-import Link from "next/link";
 import { getNotifications, markNotificationRead } from "@/features/notifications/notification-actions";
 
 type NotificationItem = {
@@ -15,6 +15,7 @@ type NotificationItem = {
 };
 
 export function NotificationBell() {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -42,17 +43,15 @@ export function NotificationBell() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  async function handleMarkRead(id: string) {
-    await markNotificationRead(id);
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
-    );
-    setUnreadCount((c) => Math.max(0, c - 1));
-  }
-
-  function requestIdFromData(data: Record<string, unknown> | null): string | null {
-    if (data && typeof data.request_id === "string") return data.request_id;
-    return null;
+  async function handleClick(n: NotificationItem) {
+    if (!n.is_read) {
+      await markNotificationRead(n.id);
+    }
+    setOpen(false);
+    const reqId = n.data && typeof n.data.request_id === "string" ? n.data.request_id : null;
+    if (reqId) {
+      router.push(`/patient/requests/${reqId}`);
+    }
   }
 
   return (
@@ -81,61 +80,41 @@ export function NotificationBell() {
                 Aucune notification
               </p>
             ) : (
-              notifications.map((n) => {
-                const reqId = requestIdFromData(n.data);
-                const content = (
-                  <div
-                    className={`px-4 py-3 transition-colors ${
-                      n.is_read ? "bg-white" : "bg-blue-50/40"
-                    } hover:bg-stone-50`}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        <p
-                          className={`text-sm ${
-                            n.is_read ? "text-stone-600" : "text-stone-800 font-medium"
-                          }`}
-                        >
-                          {n.title}
-                        </p>
-                        <p className="text-xs text-stone-400 mt-0.5 line-clamp-2">
-                          {n.body}
-                        </p>
-                        <p className="text-[10px] text-stone-300 mt-1">
-                          {new Date(n.created_at).toLocaleDateString("fr-FR", {
-                            day: "numeric",
-                            month: "short",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </p>
-                      </div>
-                      {!n.is_read && (
-                        <button
-                          onClick={() => handleMarkRead(n.id)}
-                          className="shrink-0 w-2 h-2 rounded-full bg-blue-500 mt-1.5 hover:bg-blue-600"
-                          title="Marquer comme lu"
-                        />
-                      )}
+              notifications.map((n) => (
+                <button
+                  key={n.id}
+                  onClick={() => handleClick(n)}
+                  className={`w-full text-left px-4 py-3 transition-colors ${
+                    n.is_read ? "bg-white" : "bg-blue-50/40"
+                  } hover:bg-stone-50`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p
+                        className={`text-sm ${
+                          n.is_read ? "text-stone-600" : "text-stone-800 font-medium"
+                        }`}
+                      >
+                        {n.title}
+                      </p>
+                      <p className="text-xs text-stone-400 mt-0.5 line-clamp-2">
+                        {n.body}
+                      </p>
+                      <p className="text-[10px] text-stone-300 mt-1">
+                        {new Date(n.created_at).toLocaleDateString("fr-FR", {
+                          day: "numeric",
+                          month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
                     </div>
+                    {!n.is_read && (
+                      <span className="shrink-0 w-2 h-2 rounded-full bg-blue-500 mt-1.5" />
+                    )}
                   </div>
-                );
-
-                return reqId ? (
-                  <Link
-                    key={n.id}
-                    href={`/patient/requests/${reqId}`}
-                    onClick={() => {
-                      if (!n.is_read) handleMarkRead(n.id);
-                      setOpen(false);
-                    }}
-                  >
-                    {content}
-                  </Link>
-                ) : (
-                  <div key={n.id}>{content}</div>
-                );
-              })
+                </button>
+              ))
             )}
           </div>
         </div>

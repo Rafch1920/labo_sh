@@ -33,6 +33,7 @@ export function DocumentCorrectionPanel({
 }) {
   const [newFiles, setNewFiles] = useState<NewFile[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedDoc, setSelectedDoc] = useState<DocFile | null>(null);
   const supabase = createClient();
@@ -50,10 +51,15 @@ export function DocumentCorrectionPanel({
 
   async function handleFilePick(doc: DocFile, files: FileList | null) {
     if (!files?.length) return;
+    setUploadError(null);
     setUploading(true);
 
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      setUploadError("Vous devez être connecté pour uploader un fichier.");
+      setUploading(false);
+      return;
+    }
 
     const resolvedCategory = resolveFileCategory(doc.file_category, doc.file_path);
     const file = files[0];
@@ -65,7 +71,7 @@ export function DocumentCorrectionPanel({
       .upload(filePath, file);
 
     if (error) {
-      console.error("Upload error:", error.message);
+      setUploadError(`Échec de l'upload : ${error.message}`);
       setUploading(false);
       return;
     }
@@ -178,6 +184,10 @@ export function DocumentCorrectionPanel({
           e.target.value = "";
         }}
       />
+
+      {uploadError && (
+        <p className="text-sm text-red-600 mb-3">{uploadError}</p>
+      )}
 
       <form action={action}>
         {newFiles.map((f) => (
