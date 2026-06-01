@@ -177,6 +177,34 @@
   100% { background-position: 0% 50%; }
 }
 
+@keyframes breathe {
+  0%, 100% { opacity: 0.08; transform: scale(1); }
+  50% { opacity: 0.16; transform: scale(1.08); }
+}
+
+@keyframes aurora-drift {
+  0%, 100% { transform: translate(0, 0) rotate(0deg) scale(1); }
+  25% { transform: translate(30px, -20px) rotate(3deg) scale(1.05); }
+  50% { transform: translate(-15px, 10px) rotate(-2deg) scale(0.97); }
+  75% { transform: translate(20px, -15px) rotate(2deg) scale(1.02); }
+}
+
+@keyframes shimmer-border {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes logo-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(13,148,136,0.08), 0 0 40px rgba(217,119,6,0.04); }
+  50% { box-shadow: 0 0 30px rgba(13,148,136,0.15), 0 0 60px rgba(217,119,6,0.08); }
+}
+
+@keyframes line-draw {
+  0% { width: 0; }
+  100% { width: 100%; }
+}
+
 /* Shared animations */
 
 @keyframes float {
