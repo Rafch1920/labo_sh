@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Bell } from "lucide-react";
-import { getNotifications, markNotificationRead } from "@/features/notifications/notification-actions";
+import { Bell, X } from "lucide-react";
+import { getNotifications, markNotificationRead, deleteNotification } from "@/features/notifications/notification-actions";
 
 type NotificationItem = {
   id: string;
@@ -54,6 +54,15 @@ export function NotificationBell() {
     }
   }
 
+  async function handleDelete(e: React.MouseEvent, n: NotificationItem) {
+    e.stopPropagation();
+    await deleteNotification(n.id);
+    setNotifications((prev) => prev.filter((item) => item.id !== n.id));
+    if (!n.is_read) {
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+    }
+  }
+
   return (
     <div ref={dropdownRef} className="relative">
       <button
@@ -70,7 +79,7 @@ export function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-80 rounded-xl border border-stone-200 bg-white shadow-lg z-50 overflow-hidden">
+        <div className="absolute right-0 top-full mt-2 w-80 rounded-xl border border-stone-200 bg-white shadow-lg z-[9999] overflow-hidden">
           <div className="px-4 py-3 border-b border-stone-100">
             <p className="text-sm font-semibold text-stone-800">Notifications</p>
           </div>
@@ -81,39 +90,50 @@ export function NotificationBell() {
               </p>
             ) : (
               notifications.map((n) => (
-                <button
+                <div
                   key={n.id}
-                  onClick={() => handleClick(n)}
-                  className={`w-full text-left px-4 py-3 transition-colors ${
+                  className={`relative group ${
                     n.is_read ? "bg-white" : "bg-blue-50/40"
-                  } hover:bg-stone-50`}
+                  }`}
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      <p
-                        className={`text-sm ${
-                          n.is_read ? "text-stone-600" : "text-stone-800 font-medium"
-                        }`}
-                      >
-                        {n.title}
-                      </p>
-                      <p className="text-xs text-stone-400 mt-0.5 line-clamp-2">
-                        {n.body}
-                      </p>
-                      <p className="text-[10px] text-stone-300 mt-1">
-                        {new Date(n.created_at).toLocaleDateString("fr-FR", {
-                          day: "numeric",
-                          month: "short",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </p>
+                  <button
+                    onClick={() => handleClick(n)}
+                    className="w-full text-left px-4 py-3 pr-10 transition-colors hover:bg-stone-50"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p
+                          className={`text-sm ${
+                            n.is_read ? "text-stone-600" : "text-stone-800 font-medium"
+                          }`}
+                        >
+                          {n.title}
+                        </p>
+                        <p className="text-xs text-stone-400 mt-0.5 line-clamp-2">
+                          {n.body}
+                        </p>
+                        <p className="text-[10px] text-stone-300 mt-1">
+                          {new Date(n.created_at).toLocaleDateString("fr-FR", {
+                            day: "numeric",
+                            month: "short",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </p>
+                      </div>
+                      {!n.is_read && (
+                        <span className="shrink-0 w-2 h-2 rounded-full bg-blue-500 mt-1.5" />
+                      )}
                     </div>
-                    {!n.is_read && (
-                      <span className="shrink-0 w-2 h-2 rounded-full bg-blue-500 mt-1.5" />
-                    )}
-                  </div>
-                </button>
+                  </button>
+                  <button
+                    onClick={(e) => handleDelete(e, n)}
+                    className="absolute top-2.5 right-2.5 p-1 rounded-md text-stone-300 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all"
+                    title="Supprimer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               ))
             )}
           </div>

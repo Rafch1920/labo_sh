@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
 
   await supabase.auth.signOut();
 
-  const res = NextResponse.redirect(new URL("/login", request.url));
+  const res = NextResponse.redirect(new URL("/login", request.nextUrl.origin));
   for (const { name, value, options } of pendingCookies) {
     res.cookies.set(name, value, options);
   }

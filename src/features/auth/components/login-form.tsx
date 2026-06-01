@@ -52,18 +52,16 @@ export function LoginForm() {
     <form onSubmit={handleSubmit} noValidate className="space-y-5">
       {/* Error */}
       {error && (
-        <div
-          className="flex items-start gap-2.5 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-sm text-red-300 animate-fade-in-up"
-        >
-          <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-red-400" />
+        <div className="flex items-start gap-2.5 p-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700 animate-fade-in-up">
+          <AlertCircle className="w-4 h-4 mt-0.5 shrink-0 text-red-500" />
           <span>{error}</span>
         </div>
       )}
 
       {/* Email */}
       <div className="space-y-1.5">
-        <Label htmlFor="email" className="text-white/60 text-xs font-medium uppercase tracking-wider">
-          Email
+        <Label htmlFor="email" className="text-stone-500 text-xs font-medium uppercase tracking-wider">
+          Adresse email
         </Label>
         <Input
           id="email"
@@ -72,13 +70,13 @@ export function LoginForm() {
           autoComplete="email"
           required
           placeholder="vous@exemple.fr"
-          className="h-10 bg-white/5 border-white/10 text-white placeholder:text-white/25 focus:border-sky-400/50 focus:ring-sky-400/20 rounded-xl px-3"
+          className="h-10 bg-white/80 border-stone-200 text-stone-800 placeholder:text-stone-300 focus:border-amber-400 focus:ring-amber-400/20 rounded-xl px-3"
         />
       </div>
 
       {/* Password */}
       <div className="space-y-1.5">
-        <Label htmlFor="password" className="text-white/60 text-xs font-medium uppercase tracking-wider">
+        <Label htmlFor="password" className="text-stone-500 text-xs font-medium uppercase tracking-wider">
           Mot de passe
         </Label>
         <div className="relative">
@@ -89,12 +87,12 @@ export function LoginForm() {
             autoComplete="current-password"
             required
             placeholder="••••••••"
-            className="h-10 bg-white/5 border-white/10 text-white placeholder:text-white/25 focus:border-sky-400/50 focus:ring-sky-400/20 rounded-xl px-3 pr-10"
+            className="h-10 bg-white/80 border-stone-200 text-stone-800 placeholder:text-stone-300 focus:border-amber-400 focus:ring-amber-400/20 rounded-xl px-3 pr-10"
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/50 transition-colors"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 transition-colors"
             tabIndex={-1}
           >
             {showPassword ? (
@@ -110,7 +108,7 @@ export function LoginForm() {
       <Button
         type="submit"
         disabled={pending}
-        className="w-full h-10 rounded-xl bg-gradient-to-r from-sky-500 to-emerald-500 hover:from-sky-400 hover:to-emerald-400 text-white font-medium shadow-lg shadow-sky-500/20 border-0 transition-all duration-300"
+        className="w-full h-10 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-400 hover:to-rose-400 text-white font-medium shadow-lg shadow-amber-200/40 border-0 transition-all duration-300"
       >
         {pending ? (
           <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Connexion en cours...</>
@@ -123,13 +121,13 @@ export function LoginForm() {
       <div className="flex items-center justify-between pt-1">
         <a
           href="/register"
-          className="text-xs text-white/30 hover:text-white/60 transition-colors"
+          className="text-xs text-stone-400 hover:text-amber-600 transition-colors"
         >
           Créer un compte
         </a>
         <a
           href="/reset-password"
-          className="text-xs text-white/30 hover:text-white/60 transition-colors"
+          className="text-xs text-stone-400 hover:text-amber-600 transition-colors"
         >
           Mot de passe oublié ?
         </a>
