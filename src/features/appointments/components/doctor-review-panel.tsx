@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useActionState } from "react";
 import {
   ZoomIn,
@@ -14,6 +14,8 @@ import {
   XCircle,
   ChevronLeft,
   ChevronRight,
+  ThumbsUp,
+  ThumbsDown,
 } from "lucide-react";
 import { validateReport, rejectReport } from "@/features/appointments/doctor-actions";
 import { Button } from "@/components/ui/button";
@@ -63,17 +65,32 @@ export function DoctorReviewPanel({
   const [rotation, setRotation] = useState(0);
   const [panel, setPanel] = useState<"patient" | "report">("patient");
 
+  const [actionDone, setActionDone] = useState<"validated" | "rejected" | null>(null);
+  const prevValidatePending = useRef(false);
+  const prevRejectPending = useRef(false);
+
   const [validateState, validateAction, validatePending] = useActionState(
     (_prev: { error: string | null }, formData: FormData) =>
       validateReport(requestId, formData),
     { error: null }
   );
 
-  const [, rejectAction, rejectPending] = useActionState(
+  const [rejectState, rejectAction, rejectPending] = useActionState(
     (_prev: { error: string | null }, formData: FormData) =>
       rejectReport(requestId, formData),
     { error: null }
   );
+
+  useEffect(() => {
+    if (prevValidatePending.current && !validatePending && validateState && !validateState.error) {
+      setActionDone("validated");
+    }
+    if (prevRejectPending.current && !rejectPending && rejectState && !rejectState.error) {
+      setActionDone("rejected");
+    }
+    prevValidatePending.current = validatePending;
+    prevRejectPending.current = rejectPending;
+  }, [validatePending, rejectPending, validateState, rejectState]);
 
   const selectDoc = useCallback((doc: DocWithUrl) => {
     setSelectedDoc(doc);
@@ -314,61 +331,83 @@ export function DoctorReviewPanel({
         </div>
       </div>
 
-      {/* Validation panel */}
+      {/* Validation result or panel */}
       <div className="rounded-2xl border border-violet-100/60 bg-white/70 backdrop-blur-sm p-5 shadow-lg"
         style={{ boxShadow: "0 4px 24px rgba(139,92,246,0.06)" }}
       >
-        {validateState?.error && (
-          <div className="mb-3 p-3 text-sm bg-rose-50 text-rose-700 rounded-xl border border-rose-200">
-            {validateState.error}
+        {actionDone === "validated" ? (
+          <div className="text-center py-4">
+            <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-3">
+              <ThumbsUp className="w-8 h-8 text-emerald-600" />
+            </div>
+            <p className="text-lg font-semibold text-emerald-800">Rapport validé</p>
+            <p className="text-sm text-emerald-600 mt-1">
+              Le rapport a été validé avec succès. Le laboratoire sera notifié.
+            </p>
           </div>
+        ) : actionDone === "rejected" ? (
+          <div className="text-center py-4">
+            <div className="w-16 h-16 rounded-full bg-rose-100 flex items-center justify-center mx-auto mb-3">
+              <ThumbsDown className="w-8 h-8 text-rose-600" />
+            </div>
+            <p className="text-lg font-semibold text-rose-800">Rapport refusé</p>
+            <p className="text-sm text-rose-600 mt-1">
+              Le rapport a été refusé. Le laboratoire sera notifié de la raison.
+            </p>
+          </div>
+        ) : (
+          <>
+            {(validateState?.error || rejectState?.error) && (
+              <div className="mb-3 p-3 text-sm bg-rose-50 text-rose-700 rounded-xl border border-rose-200">
+                {validateState?.error || rejectState?.error}
+              </div>
+            )}
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <form action={validateAction} className="space-y-3">
+                <div className="flex items-center gap-2 text-sm font-semibold text-emerald-700">
+                  <CheckCircle2 className="w-4 h-4" />
+                  Valider le rapport
+                </div>
+                <Textarea
+                  name="medical_remarks"
+                  placeholder="Remarques médicales (optionnel)"
+                  rows={2}
+                  className="border-violet-100 focus-visible:ring-violet-400"
+                />
+                <Button
+                  type="submit"
+                  disabled={validatePending}
+                  className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-md shadow-emerald-600/20 text-white"
+                >
+                  {validatePending ? "Validation..." : "Valider le rapport"}
+                </Button>
+              </form>
+
+              <form action={rejectAction} className="space-y-3">
+                <div className="flex items-center gap-2 text-sm font-semibold text-rose-700">
+                  <XCircle className="w-4 h-4" />
+                  Rejeter le rapport
+                </div>
+                <Textarea
+                  name="rejection_reason"
+                  placeholder="Motif du rejet"
+                  rows={2}
+                  required
+                  className="border-violet-100 focus-visible:ring-violet-400"
+                />
+                <Button
+                  type="submit"
+                  disabled={rejectPending}
+                  variant="destructive"
+                  className="w-full shadow-md"
+                >
+                  {rejectPending ? "Rejet..." : "Rejeter le rapport"}
+                </Button>
+              </form>
+            </div>
+          </>
         )}
-
-        <div className="grid gap-4 md:grid-cols-2">
-          {/* Validate */}
-          <form action={validateAction} className="space-y-3">
-            <div className="flex items-center gap-2 text-sm font-semibold text-emerald-700">
-              <CheckCircle2 className="w-4 h-4" />
-              Valider le rapport
-            </div>
-            <Textarea
-              name="medical_remarks"
-              placeholder="Remarques médicales (optionnel)"
-              rows={2}
-              className="border-violet-100 focus-visible:ring-violet-400"
-            />
-            <Button
-              type="submit"
-              disabled={validatePending}
-              className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-md shadow-emerald-600/20 text-white"
-            >
-              {validatePending ? "Validation..." : "Valider le rapport"}
-            </Button>
-          </form>
-
-          {/* Reject */}
-          <form action={rejectAction} className="space-y-3">
-            <div className="flex items-center gap-2 text-sm font-semibold text-rose-700">
-              <XCircle className="w-4 h-4" />
-              Rejeter le rapport
-            </div>
-            <Textarea
-              name="rejection_reason"
-              placeholder="Motif du rejet"
-              rows={2}
-              required
-              className="border-violet-100 focus-visible:ring-violet-400"
-            />
-            <Button
-              type="submit"
-              disabled={rejectPending}
-              variant="destructive"
-              className="w-full shadow-md"
-            >
-              {rejectPending ? "Rejet..." : "Rejeter le rapport"}
-            </Button>
-          </form>
-        </div>
       </div>
     </div>
   );

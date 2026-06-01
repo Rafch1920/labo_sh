@@ -8,6 +8,8 @@ import {
   CheckCircle2,
   ArrowRight,
   Droplets,
+  Calendar,
+  FileText,
 } from "lucide-react";
 import { StatusBadge } from "@/features/requests/components/status-badge";
 import { RequestPathMini } from "@/features/requests/components/request-path";
@@ -30,10 +32,31 @@ export default async function PatientDashboardPage() {
     requests?.filter((r) => ["REPORT_COLLECTED"].includes(r.status)).length ??
     0;
 
+  const readyCount =
+    requests?.filter((r) => r.status === "RESULT_READY").length ?? 0;
+
   const name =
     user.user_metadata?.full_name ||
     user.email?.split("@")[0] ||
     "Patient";
+
+  // Appointments for banner
+  const { data: appointments } = await supabase
+    .from("appointments")
+    .select("id, scheduled_at, status, notes, request_id")
+    .eq("patient_id", user.id)
+    .order("scheduled_at", { ascending: false });
+
+  const confirmedApt = appointments?.find((a) => a.notes?.includes("selected_index"));
+  const pendingProposal = appointments?.find(
+    (a) => a.notes?.includes("proposed_slots") && !a.notes?.includes("selected_index")
+  );
+
+  function daysUntil(d: Date): number {
+    const now = new Date();
+    const diff = d.getTime() - now.getTime();
+    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  }
 
   return (
     <div className="space-y-10">
@@ -85,6 +108,128 @@ export default async function PatientDashboardPage() {
           </div>
         ))}
       </div>
+
+      {/* RESULT_READY notification */}
+      {readyCount > 0 && (
+        <div
+          key="result-ready-banner"
+          className="rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 to-emerald-50/80 p-6"
+        >
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-emerald-100">
+                <FileText className="w-6 h-6 text-emerald-700" />
+              </div>
+              <div>
+                <p className="font-semibold text-emerald-900">
+                  Votre bilan est prêt
+                </p>
+                <p className="text-sm text-emerald-700/70 mt-0.5">
+                  {readyCount} bilan{readyCount > 1 ? "s" : ""} disponible{readyCount > 1 ? "s" : ""}. Téléchargez votre rapport ou prenez rendez-vous.
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/patient/appointments"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition-all shadow-md whitespace-nowrap"
+            >
+              <Calendar className="w-4 h-4" />
+              Prendre rendez-vous
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* Appointment status banner */}
+      {pendingProposal && (
+        <div className="rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-amber-50/80 p-6">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-amber-100">
+                <Clock className="w-6 h-6 text-amber-700" />
+              </div>
+              <div>
+                <p className="font-semibold text-amber-900">
+                  Créneaux proposés par le médecin
+                </p>
+                <p className="text-sm text-amber-700/70 mt-0.5">
+                  Le médecin vous a proposé 3 créneaux. Choisissez celui qui vous convient.
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/patient/appointments"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-600 text-white text-sm font-medium hover:bg-amber-700 transition-all shadow-md whitespace-nowrap"
+            >
+              Choisir un créneau
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {confirmedApt && (() => {
+        const aptDate = new Date(confirmedApt.scheduled_at);
+        const days = daysUntil(aptDate);
+        const isPast = days < 0;
+        const colorClass = isPast || days <= 1
+          ? "border-red-200 bg-red-50 text-red-900"
+          : days <= 3
+            ? "border-amber-200 bg-amber-50 text-amber-900"
+            : "border-emerald-200 bg-emerald-50 text-emerald-900";
+        const iconBg = isPast || days <= 1
+          ? "bg-red-100"
+          : days <= 3
+            ? "bg-amber-100"
+            : "bg-emerald-100";
+        const iconColor = isPast || days <= 1
+          ? "text-red-700"
+          : days <= 3
+            ? "text-amber-700"
+            : "text-emerald-700";
+        const label = isPast
+          ? "Rendez-vous passé"
+          : days === 0
+            ? "Rendez-vous aujourd'hui"
+            : days === 1
+              ? "Rendez-vous demain"
+              : `Rendez-vous dans ${days} jours`;
+
+        return (
+          <div className={`rounded-2xl border ${colorClass} bg-gradient-to-r p-6`}>
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className={`p-3 rounded-xl ${iconBg}`}>
+                  <Calendar className={`w-6 h-6 ${iconColor}`} />
+                </div>
+                <div>
+                  <p className={`font-semibold ${isPast || days <= 1 ? "text-red-900" : days <= 3 ? "text-amber-900" : "text-emerald-900"}`}>
+                    {label}
+                  </p>
+                  <p className={`text-sm mt-0.5 ${isPast || days <= 1 ? "text-red-700/70" : days <= 3 ? "text-amber-700/70" : "text-emerald-700/70"}`}>
+                    {aptDate.toLocaleDateString("fr-FR", {
+                      weekday: "long", day: "numeric", month: "long", year: "numeric",
+                    })}{" "}
+                    à{" "}
+                    {aptDate.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/patient/appointments"
+                className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all shadow-md whitespace-nowrap ${
+                  isPast || days <= 1
+                    ? "bg-red-600 text-white hover:bg-red-700"
+                    : days <= 3
+                      ? "bg-amber-600 text-white hover:bg-amber-700"
+                      : "bg-emerald-600 text-white hover:bg-emerald-700"
+                }`}
+              >
+                Voir
+              </Link>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Presentation */}
       <div className="relative overflow-hidden rounded-2xl bg-[#1e3a5f] p-8">

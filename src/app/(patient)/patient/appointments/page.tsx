@@ -1,6 +1,7 @@
 import { requireAuth } from "@/lib/auth/helpers";
 import { createClient } from "@/lib/supabase/server";
 import { AppointmentScheduler } from "@/features/appointments/components/appointment-scheduler";
+import { PatientSlotSelector } from "@/features/appointments/components/patient-slot-selector";
 import { StatusBadge } from "@/features/requests/components/status-badge";
 
 export const dynamic = "force-dynamic";
@@ -21,9 +22,28 @@ export default async function AppointmentsPage() {
     .eq("patient_id", user.id)
     .order("scheduled_at", { ascending: true });
 
+  const proposalsAppts = appointments?.filter(
+    (a) => a.notes?.includes("proposed_slots") && a.notes?.includes('"selected_index":null')
+  ) ?? [];
+
   return (
     <div className="space-y-6 max-w-3xl">
       <h1 className="text-3xl font-bold">Rendez-vous</h1>
+
+      {/* Pending proposals from doctor */}
+      {proposalsAppts.length > 0 && (
+        <div className="space-y-3">
+          {proposalsAppts.map((apt) => (
+            <PatientSlotSelector
+              key={apt.id}
+              appointmentId={apt.id}
+              requestId={apt.request_id}
+              notes={apt.notes!}
+              patientName=""
+            />
+          ))}
+        </div>
+      )}
 
       {pendingRequests && pendingRequests.length > 0 && (
         <div className="rounded-lg border bg-card p-4 space-y-4">

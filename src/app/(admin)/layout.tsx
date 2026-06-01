@@ -6,7 +6,6 @@ import {
   ScrollText,
   Settings,
   Wrench,
-  ImageIcon,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
@@ -55,7 +54,6 @@ export default async function AdminLayout({
             <NavLink href="/admin/audit-logs" icon={ScrollText} label="Audit" />
             <NavLink href="/admin/config" icon={Settings} label="Configuration" />
             <NavLink href="/admin/fix-docs" icon={Wrench} label="Documents" />
-            <NavLink href="/admin/signature" icon={ImageIcon} label="Signature" />
             <div className="w-px h-5 bg-amber-200 mx-2" />
             <form action="/api/auth/logout" method="POST">
               <button

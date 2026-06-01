@@ -61,6 +61,9 @@ export default async function RequestDetailPage(props: {
     (d) => d.rejection_reason != null && !d.is_verified
   );
 
+  const reportDoc = docsWithUrls.find((d) => d.file_category === "report");
+  const reportUrl = reportDoc?.public_url ?? "";
+
   return (
     <div className="max-w-3xl mx-auto space-y-8">
       <Link
@@ -100,30 +103,38 @@ export default async function RequestDetailPage(props: {
 
       {/* Result ready */}
       {request.status === "RESULT_READY" && (
-        <div className="rounded-2xl border border-blue-200/70 bg-blue-50 p-6">
+        <div className="rounded-2xl border border-emerald-200/70 bg-emerald-50 p-6">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex items-center gap-4 flex-1">
-              <div className="p-3 rounded-xl bg-blue-100">
-                <Download className="w-5 h-5 text-blue-700" />
+              <div className="p-3 rounded-xl bg-emerald-100">
+                <Download className="w-5 h-5 text-emerald-700" />
               </div>
               <div>
-                <p className="font-medium text-blue-900">Résultat disponible</p>
-                <p className="text-sm text-blue-700/60">
+                <p className="font-medium text-emerald-900">Résultat disponible</p>
+                <p className="text-sm text-emerald-700/60">
                   Téléchargez votre rapport ou prenez rendez-vous.
                 </p>
               </div>
             </div>
             <div className="flex gap-2 shrink-0">
-              <Link
-                href={`/patient/requests/${id}/report`}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#1e3a5f] text-white text-sm font-medium hover:bg-[#2a4a73] transition-all shadow-sm"
-              >
-                <Download className="w-3.5 h-3.5" />
-                Rapport
-              </Link>
+              {reportUrl ? (
+                <Link
+                  href={reportUrl}
+                  target="_blank"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#1e3a5f] text-white text-sm font-medium hover:bg-[#2a4a73] transition-all shadow-sm"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Rapport
+                </Link>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-stone-100 text-stone-400 text-sm font-medium cursor-not-allowed">
+                  <Download className="w-3.5 h-3.5" />
+                  Rapport
+                </span>
+              )}
               <Link
                 href="/patient/appointments"
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-blue-200 text-blue-700 text-sm font-medium hover:bg-blue-100 transition-all"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-emerald-200 text-emerald-700 text-sm font-medium hover:bg-emerald-100 transition-all"
               >
                 <Calendar className="w-3.5 h-3.5" />
                 Rendez-vous

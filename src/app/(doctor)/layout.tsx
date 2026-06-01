@@ -7,6 +7,7 @@ import {
   HeartPulse,
   Calendar,
   Clock,
+  LayoutDashboard,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
@@ -134,6 +135,13 @@ export default async function DoctorLayout({
 
           <nav className="flex items-center gap-1">
             <Link
+              href="/doctor/dashboard"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-violet-700 hover:text-violet-900 hover:bg-violet-50/70 transition-all"
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              <span className="hidden sm:inline">Dashboard</span>
+            </Link>
+            <Link
               href="/doctor/validations"
               className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-violet-700 hover:text-violet-900 hover:bg-violet-50/70 transition-all"
             >
@@ -146,6 +154,13 @@ export default async function DoctorLayout({
             >
               <Clock className="w-4 h-4" />
               <span className="hidden sm:inline">Disponibilités</span>
+            </Link>
+            <Link
+              href="/doctor/appointments"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-violet-700 hover:text-violet-900 hover:bg-violet-50/70 transition-all"
+            >
+              <Calendar className="w-4 h-4" />
+              <span className="hidden sm:inline">Rendez-vous</span>
             </Link>
             <div className="w-px h-5 bg-violet-200 mx-2" />
             <div className="flex items-center gap-2 pl-1">

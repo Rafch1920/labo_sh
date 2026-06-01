@@ -32,7 +32,7 @@ export function AppointmentScheduler({ requestId }: AppointmentSchedulerProps) {
   return (
     <form action={action} className="space-y-4">
       <input type="hidden" name="request_id" value={requestId} />
-      <input type="hidden" name="scheduled_at" value={selectedSlot ? `${selectedDate}T${selectedSlot}:00` : ""} />
+      <input type="hidden" name="scheduled_at" value={selectedSlot ? `${selectedDate}T${selectedSlot}:00+01:00` : ""} />
 
       {state?.error && (
         <div className="p-3 text-sm bg-destructive/10 text-destructive rounded-md">

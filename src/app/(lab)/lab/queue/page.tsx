@@ -3,7 +3,7 @@ import { ROLES } from "@/config/roles";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { StatusBadge } from "@/features/requests/components/status-badge";
 import Link from "next/link";
-import { ClipboardList, Clock, CheckCircle2, AlertCircle, Hourglass, ArrowRight, Users } from "lucide-react";
+import { ClipboardList, Clock, CheckCircle2, AlertCircle, Hourglass, ArrowRight, Users, Send, ThumbsUp, ThumbsDown } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -47,6 +47,9 @@ export default async function LabQueuePage() {
   const inProgress = countByStatus(requests ?? [], STATUS_GROUPS.inProgress);
   const validations = countByStatus(requests ?? [], STATUS_GROUPS.validations);
 
+  const validatedCount = requests?.filter((r) => r.status === "REPORT_VALIDATED").length ?? 0;
+  const rejectedCount = requests?.filter((r) => r.status === "REPORT_REJECTED").length ?? 0;
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -61,6 +64,46 @@ export default async function LabQueuePage() {
           </div>
         </div>
       </div>
+
+      {/* Notification banner for validated/rejected reports */}
+      {(validatedCount > 0 || rejectedCount > 0) && (
+        <div className="animate-fade-in-up-delay-1">
+          {validatedCount > 0 && (
+            <Link
+              href="/lab/requests"
+              className="flex items-center gap-3 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 transition-colors group"
+            >
+              <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center shrink-0">
+                <ThumbsUp className="w-5 h-5 text-emerald-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-emerald-800">
+                  {validatedCount} bilan{validatedCount > 1 ? "s" : ""} validé{validatedCount > 1 ? "s" : ""} par le médecin
+                </p>
+                <p className="text-xs text-emerald-600">
+                  Cliquez pour envoyer le{validatedCount > 1 ? "s" : ""} bilan{validatedCount > 1 ? "s" : ""} au patient
+                </p>
+              </div>
+              <Send className="w-5 h-5 text-emerald-500 group-hover:translate-x-0.5 transition-transform" />
+            </Link>
+          )}
+          {rejectedCount > 0 && (
+            <div className="flex items-center gap-3 p-4 rounded-2xl bg-amber-50 border border-amber-200 mt-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+                <ThumbsDown className="w-5 h-5 text-amber-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-amber-800">
+                  {rejectedCount} bilan{rejectedCount > 1 ? "s" : ""} refusé{rejectedCount > 1 ? "s" : ""} par le médecin
+                </p>
+                <p className="text-xs text-amber-600">
+                  Veuillez consulter le motif et corriger le rapport
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Stats cards */}
       <div className="grid gap-5 md:grid-cols-4 animate-fade-in-up-delay-1">

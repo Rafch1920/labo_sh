@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 
 type ActionResult = { error: string | null };
@@ -11,13 +12,14 @@ export async function createAppointment(
 ): Promise<ActionResult> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Non authentifié" };
 
   const requestId = formData.get("request_id") as string;
   const scheduledAt = formData.get("scheduled_at") as string;
 
   const { error } = await supabase.from("appointments").insert({
     request_id: requestId,
-    patient_id: user?.id,
+    patient_id: user.id,
     scheduled_at: scheduledAt,
     status: "scheduled",
   });
@@ -26,10 +28,26 @@ export async function createAppointment(
     return { error: error.message };
   }
 
-  await supabase
+  const admin = createAdminClient();
+  const { data: req } = await admin
     .from("analysis_requests")
-    .update({ status: "APPOINTMENT_SCHEDULED" })
-    .eq("id", requestId);
+    .select("status")
+    .eq("id", requestId)
+    .single();
+
+  if (req) {
+    await admin
+      .from("analysis_requests")
+      .update({ status: "APPOINTMENT_SCHEDULED" })
+      .eq("id", requestId);
+
+    await admin.from("status_history").insert({
+      request_id: requestId,
+      from_status: req.status,
+      to_status: "APPOINTMENT_SCHEDULED",
+      changed_by: user.id,
+    });
+  }
 
   revalidatePath("/patient/appointments");
   revalidatePath(`/patient/requests/${requestId}`);
@@ -57,14 +75,20 @@ export async function cancelAppointment(
 export async function getAvailableSlots(date: string): Promise<string[]> {
   const supabase = await createClient();
 
-  const slots: string[] = [];
-  const startHour = 8;
-  const endHour = 17;
+  const dayOfWeek = new Date(date).getDay();
+  // 0=Sun, 6=Sat → no slots
+  if (dayOfWeek === 0 || dayOfWeek === 6) return [];
 
-  for (let h = startHour; h < endHour; h++) {
-    for (let m = 0; m < 60; m += 15) {
-      const time = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-      slots.push(time);
+  const slots: string[] = [];
+  // Morning: 10h-13h, Afternoon: 15h-17h, 30min intervals
+  for (let h = 10; h < 13; h++) {
+    for (let m = 0; m < 60; m += 30) {
+      slots.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
+    }
+  }
+  for (let h = 15; h < 17; h++) {
+    for (let m = 0; m < 60; m += 30) {
+      slots.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
     }
   }
 

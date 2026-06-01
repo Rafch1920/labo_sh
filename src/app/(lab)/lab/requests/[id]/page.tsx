@@ -5,7 +5,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { StatusBadge } from "@/features/requests/components/status-badge";
 import { LabWorkflowPanel } from "@/features/requests/components/lab-workflow-panel";
 import { DocumentReviewPanel } from "@/features/requests/components/document-review-panel";
-import { ReportGenerator } from "@/features/reports/components/report-generator";
+import { ReportUploadPanel } from "@/features/requests/components/report-upload-panel";
+import { SendReportPanel } from "@/features/requests/components/send-report-panel";
 import { HistoryTimeline } from "@/features/requests/components/history-timeline";
 import { docLabel } from "@/lib/doc-labels";
 import Link from "next/link";
@@ -183,21 +184,17 @@ export default async function LabRequestDetailPage(props: { params: Promise<{ id
         </div>
       )}
 
-      {/* Report generator */}
+      {/* Report upload */}
       {request.status === "REPORT_IN_PREPARATION" && (
         <div className="animate-fade-in-up-delay-2">
-          <ReportGenerator
-            requestId={request.id}
-            requestCode={request.id.slice(0, 8).toUpperCase()}
-            patientName={`${request.patient_first_name} ${request.patient_last_name}`}
-            patientDob={request.patient_dob}
-            patientGender={request.patient_gender}
-            patientEmail={request.patient_email || ""}
-            physicianName={request.physician_name}
-            physicianEmail={request.physician_email || ""}
-            analysisDate={request.updated_at || request.created_at}
-            medicalRemarks={request.medical_remarks || ""}
-          />
+          <ReportUploadPanel requestId={request.id} hasExistingReport={false} />
+        </div>
+      )}
+
+      {/* Send report to patient */}
+      {request.status === "REPORT_VALIDATED" && (
+        <div className="animate-fade-in-up-delay-2">
+          <SendReportPanel requestId={request.id} />
         </div>
       )}
 

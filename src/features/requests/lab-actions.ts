@@ -142,3 +142,71 @@ export async function uploadReport(
   revalidatePath("/lab/queue");
   return { error: null };
 }
+
+export async function sendReportToPatient(
+  requestId: string,
+  _prevState: { error: string | null },
+  formData: FormData
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) return { error: "Non authentifié" };
+
+  const file = formData.get("file") as File;
+  if (!file || file.size === 0) return { error: "Aucun fichier" };
+
+  const admin = createAdminClient();
+
+  const { data: req } = await admin
+    .from("analysis_requests")
+    .select("status, user_id")
+    .eq("id", requestId)
+    .single();
+
+  if (!req) return { error: "Demande introuvable" };
+  if (req.status !== "REPORT_VALIDATED") {
+    return { error: "Le rapport doit d'abord être validé par le médecin" };
+  }
+
+  // Upload file to storage
+  const storagePath = `${requestId}/report-final-${Date.now()}.pdf`;
+  const { error: uploadError } = await admin.storage
+    .from("request-documents")
+    .upload(storagePath, file, {
+      contentType: "application/pdf",
+      upsert: true,
+    });
+
+  if (uploadError) return { error: `Erreur upload: ${uploadError.message}` };
+
+  const { error: docError } = await admin.from("request_documents").insert({
+    request_id: requestId,
+    file_category: "medical_report",
+    file_name: file.name || "bilan.pdf",
+    file_path: storagePath,
+    file_size_bytes: file.size,
+    mime_type: "application/pdf",
+    uploaded_by: user.id,
+    is_verified: true,
+  });
+
+  if (docError) return { error: `Erreur doc: ${docError.message}` };
+
+  const { error: statusError } = await admin
+    .from("analysis_requests")
+    .update({ status: "RESULT_READY" })
+    .eq("id", requestId);
+
+  if (statusError) return { error: `Erreur statut: ${statusError.message}` };
+
+  await admin.from("status_history").insert({
+    request_id: requestId,
+    from_status: req.status,
+    to_status: "RESULT_READY",
+    changed_by: user.id,
+  });
+
+  revalidatePath(`/lab/requests/${requestId}`);
+  revalidatePath("/lab/queue");
+  return { error: null };
+}
