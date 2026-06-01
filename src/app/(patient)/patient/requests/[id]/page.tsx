@@ -64,7 +64,7 @@ export default async function RequestDetailPage(props: {
 
   const correctionDocs = (documents ?? []).filter((d) => !d.is_verified);
 
-  const reportDoc = docsWithUrls.find((d) => d.file_category === "report");
+  const reportDoc = docsWithUrls.find((d) => d.file_category === "medical_report");
   const reportUrl = reportDoc?.public_url ?? "";
 
   const needsCorrection = request.status === "INCOMPLETE_DOSSIER" && correctionDocs.length > 0;
