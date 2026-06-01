@@ -34,7 +34,6 @@ export function DocumentCorrectionPanel({
     if (!input || !input.files?.length) return;
     const file = input.files[0];
     setSelectedFiles((prev) => ({ ...prev, [docId]: file }));
-    input.value = "";
   }
 
   function removeFile(docId: string) {
