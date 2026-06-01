@@ -3,6 +3,7 @@ import { LayoutDashboard, Calendar, LogOut, Activity, Microscope, FlaskConical, 
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { NotificationBell } from "@/features/notifications/components/notification-bell";
+import { logout } from "@/features/auth/actions/auth-actions";
 
 export default async function PatientLayout({
   children,
@@ -145,7 +146,7 @@ export default async function PatientLayout({
         />
       </div>
 
-      <header className="relative z-10 border-b border-blue-900/8 bg-white/70 backdrop-blur-xl sticky top-0">
+      <header className="relative z-30 border-b border-blue-900/8 bg-white/70 backdrop-blur-xl sticky top-0">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/patient/dashboard" className="flex items-center gap-3 group">
             <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#1e3a5f] to-[#2a4a73] flex items-center justify-center shadow-sm">
@@ -184,7 +185,7 @@ export default async function PatientLayout({
               </div>
               <span className="text-sm text-stone-600 hidden sm:inline">{name}</span>
             </div>
-            <form action="/api/auth/logout" method="POST">
+            <form action={logout}>
               <button
                 type="submit"
                 className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-stone-400 hover:text-red-600 hover:bg-red-50 transition-all"

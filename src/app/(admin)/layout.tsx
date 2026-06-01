@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { logout } from "@/features/auth/actions/auth-actions";
 
 export default async function AdminLayout({
   children,
@@ -37,7 +38,7 @@ export default async function AdminLayout({
         />
       </div>
 
-      <header className="relative z-10 border-b border-amber-900/8 bg-white/70 backdrop-blur-xl sticky top-0">
+      <header className="relative z-30 border-b border-amber-900/8 bg-white/70 backdrop-blur-xl sticky top-0">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/admin/users" className="flex items-center gap-3 group">
             <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-amber-600 to-orange-600 flex items-center justify-center shadow-sm">
@@ -55,7 +56,7 @@ export default async function AdminLayout({
             <NavLink href="/admin/config" icon={Settings} label="Configuration" />
             <NavLink href="/admin/fix-docs" icon={Wrench} label="Documents" />
             <div className="w-px h-5 bg-amber-200 mx-2" />
-            <form action="/api/auth/logout" method="POST">
+            <form action={logout}>
               <button
                 type="submit"
                 className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm text-amber-400 hover:text-rose-500 hover:bg-rose-50 transition-all"

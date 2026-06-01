@@ -19,7 +19,7 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const fetchNotifications = useCallback(async () => {
     const result = await getNotifications();
@@ -35,7 +35,7 @@ export function NotificationBell() {
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false);
       }
     }
@@ -43,11 +43,11 @@ export function NotificationBell() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  async function handleClick(n: NotificationItem) {
-    if (!n.is_read) {
-      await markNotificationRead(n.id);
-    }
+  function handleNotificationClick(n: NotificationItem) {
     setOpen(false);
+    if (!n.is_read) {
+      markNotificationRead(n.id);
+    }
     const reqId = n.data && typeof n.data.request_id === "string" ? n.data.request_id : null;
     if (reqId) {
       router.push(`/patient/requests/${reqId}`);
@@ -64,9 +64,9 @@ export function NotificationBell() {
   }
 
   return (
-    <div ref={dropdownRef} className="relative">
+    <div ref={containerRef} className="relative">
       <button
-        onClick={() => setOpen(!open)}
+        onClick={() => setOpen((prev) => !prev)}
         className="relative p-2 rounded-lg text-stone-500 hover:text-[#1e3a5f] hover:bg-blue-50/70 transition-all"
         title="Notifications"
       >
@@ -79,11 +79,11 @@ export function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-80 rounded-xl border border-stone-200 bg-white shadow-lg z-[9999] overflow-hidden">
+        <div className="fixed right-4 top-16 w-80 rounded-xl border border-stone-200 bg-white shadow-xl z-[9999] overflow-hidden">
           <div className="px-4 py-3 border-b border-stone-100">
             <p className="text-sm font-semibold text-stone-800">Notifications</p>
           </div>
-          <div className="max-h-80 overflow-y-auto divide-y divide-stone-50">
+          <div className="max-h-96 overflow-y-auto divide-y divide-stone-50">
             {notifications.length === 0 ? (
               <p className="px-4 py-6 text-sm text-stone-400 text-center">
                 Aucune notification
@@ -92,26 +92,18 @@ export function NotificationBell() {
               notifications.map((n) => (
                 <div
                   key={n.id}
-                  className={`relative group ${
-                    n.is_read ? "bg-white" : "bg-blue-50/40"
+                  className={`relative group cursor-pointer transition-colors ${
+                    n.is_read ? "bg-white hover:bg-stone-50" : "bg-blue-50/40 hover:bg-blue-50"
                   }`}
+                  onClick={() => handleNotificationClick(n)}
                 >
-                  <button
-                    onClick={() => handleClick(n)}
-                    className="w-full text-left px-4 py-3 pr-10 transition-colors hover:bg-stone-50"
-                  >
+                  <div className="px-4 py-3 pr-10">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
-                        <p
-                          className={`text-sm ${
-                            n.is_read ? "text-stone-600" : "text-stone-800 font-medium"
-                          }`}
-                        >
+                        <p className={`text-sm ${n.is_read ? "text-stone-600" : "text-stone-800 font-medium"}`}>
                           {n.title}
                         </p>
-                        <p className="text-xs text-stone-400 mt-0.5 line-clamp-2">
-                          {n.body}
-                        </p>
+                        <p className="text-xs text-stone-400 mt-0.5 line-clamp-2">{n.body}</p>
                         <p className="text-[10px] text-stone-300 mt-1">
                           {new Date(n.created_at).toLocaleDateString("fr-FR", {
                             day: "numeric",
@@ -125,7 +117,7 @@ export function NotificationBell() {
                         <span className="shrink-0 w-2 h-2 rounded-full bg-blue-500 mt-1.5" />
                       )}
                     </div>
-                  </button>
+                  </div>
                   <button
                     onClick={(e) => handleDelete(e, n)}
                     className="absolute top-2.5 right-2.5 p-1 rounded-md text-stone-300 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all"
